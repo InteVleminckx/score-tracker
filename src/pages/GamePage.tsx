@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
-import { useUsers } from '../contexts/UsersContext';
 import { useI18n } from '../i18n/I18nContext';
 import { Leaderboard } from '../components/Leaderboard';
 import { RoundEntry } from '../components/RoundEntry';
@@ -13,7 +12,6 @@ export function GamePage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
   const { meta, state, loading, loadGame, saveLoserSignature } = useGame();
-  const { users } = useUsers();
   const [signatureDismissed, setSignatureDismissed] = useState(false);
 
   useEffect(() => {
@@ -24,8 +22,10 @@ export function GamePage() {
     return <p className="text-center text-slate-500">{t('common.loading')}</p>;
   }
 
+  // Names are baked in at game creation, so this stays correct even if the
+  // Player is later removed (completed games are preserved as history).
   const players: Player[] = meta.playerIds.map(
-    (pid) => users.find((u) => u.id === pid) ?? new Player(pid, pid),
+    (pid) => new Player(pid, meta.playerNames[pid] ?? t('common.unknownPlayer')),
   );
 
   const showSignature =

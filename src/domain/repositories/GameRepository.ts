@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocs, orderBy, query, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, getDocs, orderBy, query, setDoc } from 'firebase/firestore';
 import type { GameSnapshot } from '../models/Game';
 import { gamesCollection } from '../../firebase/firestore';
 
@@ -6,6 +6,7 @@ export interface GameRepository {
   list(): Promise<GameSnapshot[]>;
   get(id: string): Promise<GameSnapshot | null>;
   save(snapshot: GameSnapshot): Promise<void>;
+  remove(id: string): Promise<void>;
 }
 
 export class FirestoreGameRepository implements GameRepository {
@@ -26,10 +27,15 @@ export class FirestoreGameRepository implements GameRepository {
     await setDoc(doc(gamesCollection, id), data);
   }
 
+  async remove(id: string): Promise<void> {
+    await deleteDoc(doc(gamesCollection, id));
+  }
+
   private toSnapshot(id: string, data: Record<string, unknown>): GameSnapshot {
     return {
       id,
       playerIds: data.playerIds as GameSnapshot['playerIds'],
+      playerNames: (data.playerNames as GameSnapshot['playerNames']) ?? {},
       actions: data.actions as GameSnapshot['actions'],
       historyIndex: data.historyIndex as number,
       loserSignature: (data.loserSignature as string | null) ?? null,

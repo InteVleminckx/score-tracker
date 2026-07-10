@@ -1,5 +1,6 @@
 import { Game, type GameSnapshot } from '../models/Game';
 import { StartRoundAction, YinLostAction, PointEntryAction } from '../models/GameAction';
+import { Player } from '../models/Player';
 import { FirestoreGameRepository, type GameRepository } from '../repositories/GameRepository';
 import { LocalCacheService } from './LocalCacheService';
 
@@ -16,9 +17,10 @@ export class GameService {
     this.cache = cache;
   }
 
-  async createGame(playerIds: string[]): Promise<Game> {
+  async createGame(players: Player[]): Promise<Game> {
     const id = crypto.randomUUID();
-    const game = new Game({ id, playerIds });
+    const playerNames = Object.fromEntries(players.map((p) => [p.id, p.name]));
+    const game = new Game({ id, playerIds: players.map((p) => p.id), playerNames });
     await this.persist(game);
     return game;
   }
@@ -83,6 +85,28 @@ export class GameService {
 
   setLoserSignature(game: Game, dataUrl: string): void {
     game.loserSignature = dataUrl;
+  }
+
+  async deleteGame(id: string): Promise<void> {
+    await this.repo.remove(id);
+    this.cache.clearPendingGame(id);
+    this.cache.setCachedGames(this.cache.getCachedGames().filter((g) => g.id !== id));
+  }
+
+  /**
+   * Cascades a Player removal: in-progress games referencing the player are no longer
+   * playable (a scored player just vanished), so they're deleted. Completed games keep
+   * their baked-in playerNames and are left untouched as a historical record.
+   */
+  async deleteInProgressGamesForPlayer(playerId: string): Promise<void> {
+    const games = await this.listGames();
+    for (const snapshot of games) {
+      if (!snapshot.playerIds.includes(playerId)) continue;
+      const state = Game.fromSnapshot(snapshot).getCurrentState();
+      if (state.status === 'in_progress') {
+        await this.deleteGame(snapshot.id);
+      }
+    }
   }
 
   /** Retries any locally-buffered games that failed to sync earlier. */

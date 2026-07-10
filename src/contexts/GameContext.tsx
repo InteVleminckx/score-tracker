@@ -10,10 +10,12 @@ import {
 import { Game } from '../domain/models/Game';
 import { GameState } from '../domain/models/GameState';
 import { GameService } from '../domain/services/GameService';
+import type { Player } from '../domain/models/Player';
 
 interface GameMeta {
   id: string;
   playerIds: string[];
+  playerNames: Record<string, string>;
   canUndo: boolean;
   canRedo: boolean;
   loserSignature: string | null;
@@ -25,7 +27,7 @@ interface GameContextValue {
   loading: boolean;
   error: string | null;
   syncing: boolean;
-  createGame: (playerIds: string[]) => Promise<string>;
+  createGame: (players: Player[]) => Promise<string>;
   loadGame: (id: string) => Promise<void>;
   startRound: (yinPlayerId: string) => Promise<void>;
   recordYinLost: () => Promise<void>;
@@ -53,6 +55,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setMeta({
       id: g.id,
       playerIds: g.playerIds,
+      playerNames: g.playerNames,
       canUndo: g.canUndo(),
       canRedo: g.canRedo(),
       loserSignature: g.loserSignature,
@@ -77,11 +80,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [sync],
   );
 
-  const createGame = useCallback(async (playerIds: string[]) => {
+  const createGame = useCallback(async (players: Player[]) => {
     setLoading(true);
     setError(null);
     try {
-      const game = await gameService.createGame(playerIds);
+      const game = await gameService.createGame(players);
       gameRef.current = game;
       sync();
       return game.id;

@@ -7,6 +7,8 @@
   "users.addPlaceholder": "Naam speler",
   "users.add": "Speler toevoegen",
   "users.empty": "Nog geen spelers. Voeg er een toe om te beginnen.",
+  "users.remove": "Speler verwijderen",
+  "users.removeConfirm": "Deze speler verwijderen? Lopende spellen met deze speler worden verwijderd; afgeronde spellen blijven bewaard.",
   "newGame.title": "Nieuw spel",
   "newGame.selectPlayers": "Selecteer spelers (in telvolgorde)",
   "newGame.addNewPlayer": "Nieuwe speler toevoegen",
@@ -31,6 +33,8 @@
   "history.resume": "Hervatten",
   "history.loser": "Verloren: {{name}}",
   "history.empty": "Nog geen spellen.",
+  "history.remove": "Spel verwijderen",
+  "history.removeConfirm": "Dit spel verwijderen? Dit kan niet ongedaan gemaakt worden.",
   "undo": "Ongedaan maken",
   "redo": "Opnieuw",
   "signature.title": "{{name}} heeft verloren. Zet hier je handtekening!",
@@ -43,5 +47,6 @@
   "language.nl": "Nederlands",
   "common.cancel": "Annuleren",
   "common.loading": "Laden…",
-  "common.error": "Er is iets misgegaan."
+  "common.error": "Er is iets misgegaan.",
+  "common.unknownPlayer": "Onbekende speler"
 }

@@ -7,6 +7,8 @@
   "users.addPlaceholder": "Player name",
   "users.add": "Add player",
   "users.empty": "No players yet. Add one to get started.",
+  "users.remove": "Remove player",
+  "users.removeConfirm": "Remove this player? Their in-progress games will be deleted; completed games are kept.",
   "newGame.title": "New Game",
   "newGame.selectPlayers": "Select players (in counting order)",
   "newGame.addNewPlayer": "Add new player",
@@ -31,6 +33,8 @@
   "history.resume": "Resume",
   "history.loser": "Lost: {{name}}",
   "history.empty": "No games yet.",
+  "history.remove": "Remove game",
+  "history.removeConfirm": "Remove this game? This can't be undone.",
   "undo": "Undo",
   "redo": "Redo",
   "signature.title": "{{name}} lost. Sign here!",
@@ -43,5 +47,6 @@
   "language.nl": "Dutch",
   "common.cancel": "Cancel",
   "common.loading": "Loading…",
-  "common.error": "Something went wrong."
+  "common.error": "Something went wrong.",
+  "common.unknownPlayer": "Unknown player"
 }

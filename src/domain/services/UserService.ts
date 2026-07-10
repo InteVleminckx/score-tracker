@@ -35,4 +35,9 @@ export class UserService {
     this.cache.setCachedUsers(users);
     return user;
   }
+
+  async removeUser(id: string): Promise<void> {
+    await this.repo.remove(id);
+    this.cache.setCachedUsers(this.cache.getCachedUsers().filter((u) => u.id !== id));
+  }
 }

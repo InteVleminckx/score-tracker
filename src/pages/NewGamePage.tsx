@@ -29,7 +29,8 @@ export function NewGamePage() {
   const start = async () => {
     setBusy(true);
     try {
-      const id = await createGame(selectedIds);
+      const players = selectedIds.map((id) => users.find((u) => u.id === id)!);
+      const id = await createGame(players);
       navigate(`/game/${id}`);
     } finally {
       setBusy(false);

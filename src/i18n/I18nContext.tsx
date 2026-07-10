@@ -20,7 +20,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 function detectDefaultLocale(): Locale {
   const stored = localStorage.getItem(LOCALE_KEY);
   if (stored === 'en' || stored === 'nl') return stored;
-  return navigator.language.toLowerCase().startsWith('nl') ? 'nl' : 'en';
+  return 'nl';
 }
 
 function interpolate(template: string, params?: TranslateParams): string {

@@ -4,6 +4,8 @@ import { GameState } from './GameState';
 export interface GameSnapshot {
   id: string;
   playerIds: string[];
+  /** Player names at the time the game was created — kept even if the Player is later removed. */
+  playerNames: Record<string, string>;
   actions: SerializedAction[];
   historyIndex: number;
   loserSignature: string | null;
@@ -19,6 +21,7 @@ export interface GameSnapshot {
 export class Game {
   readonly id: string;
   readonly playerIds: string[];
+  readonly playerNames: Record<string, string>;
   readonly actions: GameAction[];
   historyIndex: number;
   loserSignature: string | null;
@@ -28,6 +31,7 @@ export class Game {
   constructor(params: {
     id: string;
     playerIds: string[];
+    playerNames: Record<string, string>;
     actions?: GameAction[];
     historyIndex?: number;
     loserSignature?: string | null;
@@ -36,6 +40,7 @@ export class Game {
   }) {
     this.id = params.id;
     this.playerIds = params.playerIds;
+    this.playerNames = params.playerNames;
     this.actions = params.actions ?? [];
     this.historyIndex = params.historyIndex ?? -1;
     this.loserSignature = params.loserSignature ?? null;
@@ -47,6 +52,7 @@ export class Game {
     return new Game({
       id: snapshot.id,
       playerIds: snapshot.playerIds,
+      playerNames: snapshot.playerNames,
       actions: snapshot.actions.map((a) => GameAction.fromJSON(a)),
       historyIndex: snapshot.historyIndex,
       loserSignature: snapshot.loserSignature,
@@ -59,6 +65,7 @@ export class Game {
     return {
       id: this.id,
       playerIds: this.playerIds,
+      playerNames: this.playerNames,
       actions: this.actions.map((a) => a.toJSON()),
       historyIndex: this.historyIndex,
       loserSignature: this.loserSignature,
@@ -79,11 +86,14 @@ export class Game {
     return this.getCurrentState().isRoundResolved();
   }
 
+  /** Once a game is completed, its history is frozen — no undo/redo. */
   canUndo(): boolean {
+    if (this.getCurrentState().status === 'completed') return false;
     return this.historyIndex >= 0;
   }
 
   canRedo(): boolean {
+    if (this.getCurrentState().status === 'completed') return false;
     return this.historyIndex < this.actions.length - 1;
   }
 

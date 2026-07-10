@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { useUsers } from '../contexts/UsersContext';
 import { useI18n } from '../i18n/I18nContext';
+import { TrashIcon } from './icons';
 
 export function UserManager() {
   const { t } = useI18n();
-  const { users, addUser, loading } = useUsers();
+  const { users, addUser, removeUser, loading } = useUsers();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -18,6 +19,10 @@ export function UserManager() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleRemove = (id: string) => {
+    if (window.confirm(t('users.removeConfirm'))) void removeUser(id);
   };
 
   return (
@@ -43,13 +48,21 @@ export function UserManager() {
       ) : users.length === 0 ? (
         <p className="text-sm text-slate-500">{t('users.empty')}</p>
       ) : (
-        <ul className="flex flex-wrap gap-2">
+        <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
           {users.map((u) => (
             <li
               key={u.id}
-              className="rounded-full bg-slate-100 px-3 py-1 text-sm dark:bg-slate-800"
+              className="flex items-center justify-between gap-2 bg-white pl-4 dark:bg-slate-900"
             >
-              {u.name}
+              <span className="text-base font-medium">{u.name}</span>
+              <button
+                type="button"
+                aria-label={t('users.remove')}
+                onClick={() => handleRemove(u.id)}
+                className="flex h-14 w-14 shrink-0 items-center justify-center text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
+              >
+                <TrashIcon width="1.25em" height="1.25em" />
+              </button>
             </li>
           ))}
         </ul>
