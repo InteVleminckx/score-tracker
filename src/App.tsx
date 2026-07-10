@@ -31,7 +31,7 @@ function AppShell() {
       <main className="mx-auto max-w-md px-4 py-4 pb-24">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/new-game" element={<NewGamePage />} />
+          <Route path="/new-game/:gameTypeId" element={<NewGamePage />} />
           <Route path="/game/:id" element={<GamePage />} />
           <Route path="/history" element={<HistoryPage />} />
         </Routes>

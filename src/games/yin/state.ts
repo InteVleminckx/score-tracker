@@ -1,8 +1,7 @@
-import { ScoreEngine, type PlayerRoundState } from './ScoreEngine';
+import { YinScoreEngine, type PlayerRoundState } from './scoreEngine';
+import type { GameStatus, GameSummary } from '../types';
 
-export type GameStatus = 'in_progress' | 'completed';
-
-interface GameStateSnapshot {
+interface YinGameStateSnapshot {
   playerStates: Record<string, PlayerRoundState>;
   currentRoundNumber: number;
   currentRoundYinPlayerId: string | null;
@@ -12,20 +11,20 @@ interface GameStateSnapshot {
   loserId: string | null;
 }
 
-/** Immutable value object: the derived state of a game at a point in its action log. */
-export class GameState {
-  private readonly snapshot: GameStateSnapshot;
+/** Immutable value object: the derived state of a YIN game at a point in its action log. */
+export class YinGameState {
+  private readonly snapshot: YinGameStateSnapshot;
 
-  private constructor(snapshot: GameStateSnapshot) {
+  private constructor(snapshot: YinGameStateSnapshot) {
     this.snapshot = snapshot;
   }
 
-  static initial(playerIds: string[]): GameState {
+  static initial(playerIds: string[]): YinGameState {
     const playerStates: Record<string, PlayerRoundState> = {};
     for (const id of playerIds) {
       playerStates[id] = { score: 0, hasHit100: false, eliminated: false };
     }
-    return new GameState({
+    return new YinGameState({
       playerStates,
       currentRoundNumber: 0,
       currentRoundYinPlayerId: null,
@@ -34,10 +33,6 @@ export class GameState {
       status: 'in_progress',
       loserId: null,
     });
-  }
-
-  get playerStates(): Record<string, PlayerRoundState> {
-    return this.snapshot.playerStates;
   }
 
   get status(): GameStatus {
@@ -68,14 +63,27 @@ export class GameState {
     return this.snapshot.playerStates[playerId].score;
   }
 
-  startRound(roundNumber: number, yinPlayerId: string): GameState {
+  toSummary(playerIds: string[]): GameSummary {
+    return {
+      status: this.snapshot.status,
+      loserId: this.snapshot.loserId,
+      roundResolved: this.snapshot.currentRoundResolved,
+      leaderboard: playerIds.map((id) => ({
+        playerId: id,
+        score: this.snapshot.playerStates[id].score,
+        badgeKey: this.snapshot.playerStates[id].eliminated ? 'leaderboard.eliminated' : undefined,
+      })),
+    };
+  }
+
+  startRound(roundNumber: number, yinPlayerId: string): YinGameState {
     if (this.snapshot.status === 'completed') {
       throw new Error('Cannot start a round: game already completed.');
     }
     if (!this.snapshot.currentRoundResolved) {
       throw new Error('Cannot start a new round before the current one is resolved.');
     }
-    return new GameState({
+    return new YinGameState({
       ...this.snapshot,
       currentRoundNumber: roundNumber,
       currentRoundYinPlayerId: yinPlayerId,
@@ -84,16 +92,16 @@ export class GameState {
     });
   }
 
-  resolveYinLost(): GameState {
+  resolveYinLost(): YinGameState {
     const yinId = this.requireCurrentYinPlayer();
     const playerStates = { ...this.snapshot.playerStates };
     for (const id of Object.keys(playerStates)) {
-      playerStates[id] = ScoreEngine.applyRoundPoints(playerStates[id], id === yinId ? 50 : 0);
+      playerStates[id] = YinScoreEngine.applyRoundPoints(playerStates[id], id === yinId ? 50 : 0);
     }
     return this.resolveRound(playerStates, this.snapshot.currentRoundEnteredPlayerIds);
   }
 
-  enterPoints(playerId: string, points: number): GameState {
+  enterPoints(playerId: string, points: number): YinGameState {
     const yinId = this.requireCurrentYinPlayer();
     if (playerId === yinId) {
       throw new Error('The yin player is scored automatically; do not enter points for them directly.');
@@ -104,7 +112,7 @@ export class GameState {
 
     const playerStates: Record<string, PlayerRoundState> = {
       ...this.snapshot.playerStates,
-      [playerId]: ScoreEngine.applyRoundPoints(this.snapshot.playerStates[playerId], points),
+      [playerId]: YinScoreEngine.applyRoundPoints(this.snapshot.playerStates[playerId], points),
     };
     const enteredPlayerIds = [...this.snapshot.currentRoundEnteredPlayerIds, playerId];
 
@@ -114,7 +122,7 @@ export class GameState {
     );
 
     if (remainingNonYin.length > 0) {
-      return new GameState({
+      return new YinGameState({
         ...this.snapshot,
         playerStates,
         currentRoundEnteredPlayerIds: enteredPlayerIds,
@@ -122,14 +130,14 @@ export class GameState {
     }
 
     // Last non-yin entry for this round: yin player is implicitly scored 0.
-    playerStates[yinId] = ScoreEngine.applyRoundPoints(playerStates[yinId], 0);
+    playerStates[yinId] = YinScoreEngine.applyRoundPoints(playerStates[yinId], 0);
     return this.resolveRound(playerStates, enteredPlayerIds);
   }
 
   private resolveRound(
     playerStates: Record<string, PlayerRoundState>,
     enteredPlayerIds: string[],
-  ): GameState {
+  ): YinGameState {
     const eliminatedIds = Object.keys(playerStates).filter((id) => playerStates[id].eliminated);
 
     let status: GameStatus = this.snapshot.status;
@@ -144,7 +152,7 @@ export class GameState {
       );
     }
 
-    return new GameState({
+    return new YinGameState({
       ...this.snapshot,
       playerStates,
       currentRoundEnteredPlayerIds: enteredPlayerIds,

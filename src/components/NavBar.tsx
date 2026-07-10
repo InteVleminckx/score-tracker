@@ -1,10 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
-import { HomeIcon, PlusIcon, HistoryIcon } from './icons';
+import { HomeIcon, HistoryIcon } from './icons';
 
 const tabs = [
   { to: '/', key: 'nav.home', Icon: HomeIcon },
-  { to: '/new-game', key: 'nav.newGame', Icon: PlusIcon },
   { to: '/history', key: 'nav.history', Icon: HistoryIcon },
 ] as const;
 

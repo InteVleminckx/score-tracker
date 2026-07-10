@@ -1,27 +1,27 @@
 import type { Player } from '../domain/models/Player';
-import type { GameState } from '../domain/models/GameState';
+import type { GameSummary } from '../games/types';
 import { useI18n } from '../i18n/I18nContext';
 
 interface LeaderboardProps {
   /** Players already in the game's fixed counting order. */
   players: Player[];
-  state: GameState;
+  summary: GameSummary;
 }
 
-export function Leaderboard({ players, state }: LeaderboardProps) {
+export function Leaderboard({ players, summary }: LeaderboardProps) {
   const { t } = useI18n();
   return (
     <section className="space-y-2">
       <h2 className="text-lg font-semibold">{t('leaderboard.title')}</h2>
-      {state.status === 'completed' && (
+      {summary.status === 'completed' && (
         <p className="rounded-lg bg-amber-100 px-3 py-2 text-center font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
           {t('leaderboard.gameOver')}
         </p>
       )}
       <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
         {players.map((p) => {
-          const playerState = state.playerStates[p.id];
-          const isLoser = state.loserId === p.id;
+          const row = summary.leaderboard.find((r) => r.playerId === p.id);
+          const isLoser = summary.loserId === p.id;
           return (
             <li
               key={p.id}
@@ -31,14 +31,14 @@ export function Leaderboard({ players, state }: LeaderboardProps) {
             >
               <span className="text-base font-medium">
                 {p.name}
-                {playerState.eliminated && (
+                {row?.badgeKey && (
                   <span className="ml-2 text-xs font-normal text-rose-600 dark:text-rose-400">
-                    {t('leaderboard.eliminated')}
+                    {t(row.badgeKey)}
                   </span>
                 )}
               </span>
               <span className="text-xl font-semibold tabular-nums">
-                {playerState.score}{' '}
+                {row?.score ?? 0}{' '}
                 <span className="text-sm font-normal text-slate-500">{t('leaderboard.points')}</span>
               </span>
             </li>

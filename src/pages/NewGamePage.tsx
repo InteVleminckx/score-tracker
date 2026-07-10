@@ -1,18 +1,26 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useUsers } from '../contexts/UsersContext';
 import { useGame } from '../contexts/GameContext';
 import { useI18n } from '../i18n/I18nContext';
 import { PlayerPicker } from '../components/PlayerPicker';
+import { getGameTypeDefinition } from '../games/registry';
 
 export function NewGamePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { gameTypeId } = useParams<{ gameTypeId: string }>();
   const { users, addUser } = useUsers();
   const { createGame, loading } = useGame();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [newName, setNewName] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const def = gameTypeId ? getGameTypeDefinition(gameTypeId) : undefined;
+  if (!gameTypeId || !def) {
+    // Unknown, or a dev-only game type opened in a build where it isn't registered.
+    return <Navigate to="/" replace />;
+  }
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -30,7 +38,7 @@ export function NewGamePage() {
     setBusy(true);
     try {
       const players = selectedIds.map((id) => users.find((u) => u.id === id)!);
-      const id = await createGame(players);
+      const id = await createGame(gameTypeId, players);
       navigate(`/game/${id}`);
     } finally {
       setBusy(false);
@@ -39,7 +47,7 @@ export function NewGamePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">{t('newGame.title')}</h1>
+      <h1 className="text-xl font-semibold">{t(def.nameKey)}</h1>
 
       <div className="space-y-2">
         <p className="text-sm text-slate-500">{t('newGame.selectPlayers')}</p>

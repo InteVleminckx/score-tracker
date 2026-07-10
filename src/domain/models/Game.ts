@@ -1,12 +1,13 @@
-import { GameAction, type SerializedAction } from './GameAction';
-import { GameState } from './GameState';
+import type { GameAction, GameSummary } from '../../games/types';
+import { getEngine } from '../../games/engines';
 
 export interface GameSnapshot {
   id: string;
+  gameTypeId: string;
   playerIds: string[];
   /** Player names at the time the game was created — kept even if the Player is later removed. */
   playerNames: Record<string, string>;
-  actions: SerializedAction[];
+  actions: Record<string, unknown>[];
   historyIndex: number;
   loserSignature: string | null;
   createdAt: number;
@@ -14,12 +15,14 @@ export interface GameSnapshot {
 }
 
 /**
- * Aggregate root: a game's identity, fixed player order, and its full
- * undo/redo-capable action log. Scores/status are never stored directly —
- * always derived by replaying actions[0..historyIndex] through GameState.
+ * Aggregate root: a game's identity, its type, fixed player order, and its
+ * full undo/redo-capable action log. Scores/status are never stored
+ * directly — always derived by replaying actions[0..historyIndex] through
+ * the game type's engine (resolved via `gameTypeId`, see `games/engines.ts`).
  */
 export class Game {
   readonly id: string;
+  readonly gameTypeId: string;
   readonly playerIds: string[];
   readonly playerNames: Record<string, string>;
   readonly actions: GameAction[];
@@ -30,6 +33,7 @@ export class Game {
 
   constructor(params: {
     id: string;
+    gameTypeId: string;
     playerIds: string[];
     playerNames: Record<string, string>;
     actions?: GameAction[];
@@ -39,6 +43,7 @@ export class Game {
     updatedAt?: number;
   }) {
     this.id = params.id;
+    this.gameTypeId = params.gameTypeId;
     this.playerIds = params.playerIds;
     this.playerNames = params.playerNames;
     this.actions = params.actions ?? [];
@@ -49,11 +54,13 @@ export class Game {
   }
 
   static fromSnapshot(snapshot: GameSnapshot): Game {
+    const engine = getEngine(snapshot.gameTypeId);
     return new Game({
       id: snapshot.id,
+      gameTypeId: snapshot.gameTypeId,
       playerIds: snapshot.playerIds,
       playerNames: snapshot.playerNames,
-      actions: snapshot.actions.map((a) => GameAction.fromJSON(a)),
+      actions: snapshot.actions.map((a) => engine.deserializeAction(a)),
       historyIndex: snapshot.historyIndex,
       loserSignature: snapshot.loserSignature,
       createdAt: snapshot.createdAt,
@@ -64,6 +71,7 @@ export class Game {
   toSnapshot(): GameSnapshot {
     return {
       id: this.id,
+      gameTypeId: this.gameTypeId,
       playerIds: this.playerIds,
       playerNames: this.playerNames,
       actions: this.actions.map((a) => a.toJSON()),
@@ -74,26 +82,27 @@ export class Game {
     };
   }
 
-  getCurrentState(): GameState {
-    let state = GameState.initial(this.playerIds);
+  getRawState(): unknown {
+    const engine = getEngine(this.gameTypeId);
+    let state = engine.initialState(this.playerIds);
     for (let i = 0; i <= this.historyIndex; i++) {
       state = this.actions[i].apply(state);
     }
     return state;
   }
 
-  isRoundComplete(): boolean {
-    return this.getCurrentState().isRoundResolved();
+  getSummary(): GameSummary {
+    return getEngine(this.gameTypeId).summarize(this.getRawState(), this.playerIds);
   }
 
   /** Once a game is completed, its history is frozen — no undo/redo. */
   canUndo(): boolean {
-    if (this.getCurrentState().status === 'completed') return false;
+    if (this.getSummary().status === 'completed') return false;
     return this.historyIndex >= 0;
   }
 
   canRedo(): boolean {
-    if (this.getCurrentState().status === 'completed') return false;
+    if (this.getSummary().status === 'completed') return false;
     return this.historyIndex < this.actions.length - 1;
   }
 
@@ -111,7 +120,7 @@ export class Game {
 
   /** Applies and appends an action, validating it against the current derived state first. */
   addAction(action: GameAction): void {
-    action.apply(this.getCurrentState()); // throws if the transition is invalid
+    action.apply(this.getRawState()); // throws if the transition is invalid
 
     this.actions.length = this.historyIndex + 1; // drop any redo tail
     this.actions.push(action);

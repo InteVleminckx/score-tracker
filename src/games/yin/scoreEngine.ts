@@ -9,7 +9,7 @@ export interface PlayerRoundState {
  * are added. Thresholds trigger on an exact score match; elimination is the
  * one range check (> 150).
  */
-export class ScoreEngine {
+export class YinScoreEngine {
   static applyRoundPoints(state: PlayerRoundState, rawPoints: number): PlayerRoundState {
     let score = state.score + rawPoints;
     let hasHit100 = state.hasHit100;

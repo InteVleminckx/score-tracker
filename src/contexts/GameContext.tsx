@@ -8,12 +8,13 @@ import {
   type ReactNode,
 } from 'react';
 import { Game } from '../domain/models/Game';
-import { GameState } from '../domain/models/GameState';
 import { GameService } from '../domain/services/GameService';
 import type { Player } from '../domain/models/Player';
+import type { GameAction, GameSummary } from '../games/types';
 
 interface GameMeta {
   id: string;
+  gameTypeId: string;
   playerIds: string[];
   playerNames: Record<string, string>;
   canUndo: boolean;
@@ -23,15 +24,16 @@ interface GameMeta {
 
 interface GameContextValue {
   meta: GameMeta | null;
-  state: GameState | null;
+  /** Generic status/leaderboard info — for Leaderboard, UndoRedoBar, history. */
+  summary: GameSummary | null;
+  /** Engine-specific state — only the paired RoundEntry component should cast this. */
+  rawState: unknown;
   loading: boolean;
   error: string | null;
   syncing: boolean;
-  createGame: (players: Player[]) => Promise<string>;
+  createGame: (gameTypeId: string, players: Player[]) => Promise<string>;
   loadGame: (id: string) => Promise<void>;
-  startRound: (yinPlayerId: string) => Promise<void>;
-  recordYinLost: () => Promise<void>;
-  recordPoints: (playerId: string, points: number) => Promise<void>;
+  dispatch: (action: GameAction) => Promise<void>;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   saveLoserSignature: (dataUrl: string) => Promise<void>;
@@ -43,7 +45,8 @@ const gameService = new GameService();
 export function GameProvider({ children }: { children: ReactNode }) {
   const gameRef = useRef<Game | null>(null);
   const [meta, setMeta] = useState<GameMeta | null>(null);
-  const [state, setState] = useState<GameState | null>(null);
+  const [summary, setSummary] = useState<GameSummary | null>(null);
+  const [rawState, setRawState] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +54,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const sync = useCallback(() => {
     const g = gameRef.current;
     if (!g) return;
-    setState(g.getCurrentState());
+    setRawState(g.getRawState());
+    setSummary(g.getSummary());
     setMeta({
       id: g.id,
+      gameTypeId: g.gameTypeId,
       playerIds: g.playerIds,
       playerNames: g.playerNames,
       canUndo: g.canUndo(),
@@ -80,83 +85,81 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [sync],
   );
 
-  const createGame = useCallback(async (players: Player[]) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const game = await gameService.createGame(players);
-      gameRef.current = game;
-      sync();
-      return game.id;
-    } catch (err) {
-      setError('common.error');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [sync]);
+  const createGame = useCallback(
+    async (gameTypeId: string, players: Player[]) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const game = await gameService.createGame(gameTypeId, players);
+        gameRef.current = game;
+        sync();
+        return game.id;
+      } catch (err) {
+        setError('common.error');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sync],
+  );
 
-  const loadGame = useCallback(async (id: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const game = await gameService.loadGame(id);
-      gameRef.current = game;
-      sync();
-    } catch {
-      setError('common.error');
-    } finally {
-      setLoading(false);
-    }
-  }, [sync]);
+  const loadGame = useCallback(
+    async (id: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const game = await gameService.loadGame(id);
+        gameRef.current = game;
+        sync();
+      } catch {
+        setError('common.error');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sync],
+  );
 
-  const startRound = useCallback(
-    (yinPlayerId: string) => runAction((g) => gameService.startRound(g, yinPlayerId)),
+  const dispatch = useCallback(
+    (action: GameAction) => runAction((g) => g.addAction(action)),
     [runAction],
   );
-  const recordYinLost = useCallback(
-    () => runAction((g) => gameService.recordYinLost(g)),
-    [runAction],
-  );
-  const recordPoints = useCallback(
-    (playerId: string, points: number) =>
-      runAction((g) => gameService.recordPoints(g, playerId, points)),
-    [runAction],
-  );
-  const undo = useCallback(() => runAction((g) => gameService.undo(g)), [runAction]);
-  const redo = useCallback(() => runAction((g) => gameService.redo(g)), [runAction]);
+  const undo = useCallback(() => runAction((g) => g.undo()), [runAction]);
+  const redo = useCallback(() => runAction((g) => g.redo()), [runAction]);
   const saveLoserSignature = useCallback(
-    (dataUrl: string) => runAction((g) => gameService.setLoserSignature(g, dataUrl)),
+    (dataUrl: string) =>
+      runAction((g) => {
+        g.loserSignature = dataUrl;
+      }),
     [runAction],
   );
 
   const value = useMemo(
     () => ({
       meta,
-      state,
+      summary,
+      rawState,
       loading,
       error,
       syncing,
       createGame,
       loadGame,
-      startRound,
-      recordYinLost,
-      recordPoints,
+      dispatch,
       undo,
       redo,
       saveLoserSignature,
     }),
     [
       meta,
-      state,
+      summary,
+      rawState,
       loading,
       error,
       syncing,
       createGame,
       loadGame,
-      startRound,
-      recordYinLost,
-      recordPoints,
+      dispatch,
       undo,
       redo,
       saveLoserSignature,

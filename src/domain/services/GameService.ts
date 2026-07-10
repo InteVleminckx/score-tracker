@@ -1,10 +1,16 @@
 import { Game, type GameSnapshot } from '../models/Game';
-import { StartRoundAction, YinLostAction, PointEntryAction } from '../models/GameAction';
 import { Player } from '../models/Player';
 import { FirestoreGameRepository, type GameRepository } from '../repositories/GameRepository';
 import { LocalCacheService } from './LocalCacheService';
 
-/** Orchestrates the Game aggregate against Firestore, with a localStorage offline buffer. */
+/**
+ * Orchestrates the Game aggregate against Firestore, with a localStorage
+ * offline buffer. Game-type-specific mutations (which actions to construct,
+ * when) live in each game type's own RoundEntry component and are applied
+ * via `Game.addAction` from `GameContext.dispatch` — this service only
+ * handles identity, persistence, and lifecycle, so it's the same for every
+ * game type.
+ */
 export class GameService {
   private readonly repo: GameRepository;
   private readonly cache: LocalCacheService;
@@ -17,10 +23,10 @@ export class GameService {
     this.cache = cache;
   }
 
-  async createGame(players: Player[]): Promise<Game> {
+  async createGame(gameTypeId: string, players: Player[]): Promise<Game> {
     const id = crypto.randomUUID();
     const playerNames = Object.fromEntries(players.map((p) => [p.id, p.name]));
-    const game = new Game({ id, playerIds: players.map((p) => p.id), playerNames });
+    const game = new Game({ id, gameTypeId, playerIds: players.map((p) => p.id), playerNames });
     await this.persist(game);
     return game;
   }
@@ -57,36 +63,6 @@ export class GameService {
     }
   }
 
-  // Mutation methods are synchronous so the UI can update optimistically;
-  // callers are expected to call `persist()` afterwards (see GameContext).
-
-  startRound(game: Game, yinPlayerId: string): void {
-    const roundNumber = game.getCurrentState().currentRoundNumber + 1;
-    game.addAction(new StartRoundAction(roundNumber, yinPlayerId));
-  }
-
-  recordYinLost(game: Game): void {
-    const roundNumber = game.getCurrentState().currentRoundNumber;
-    game.addAction(new YinLostAction(roundNumber));
-  }
-
-  recordPoints(game: Game, playerId: string, points: number): void {
-    const roundNumber = game.getCurrentState().currentRoundNumber;
-    game.addAction(new PointEntryAction(roundNumber, playerId, points));
-  }
-
-  undo(game: Game): void {
-    game.undo();
-  }
-
-  redo(game: Game): void {
-    game.redo();
-  }
-
-  setLoserSignature(game: Game, dataUrl: string): void {
-    game.loserSignature = dataUrl;
-  }
-
   async deleteGame(id: string): Promise<void> {
     await this.repo.remove(id);
     this.cache.clearPendingGame(id);
@@ -102,8 +78,8 @@ export class GameService {
     const games = await this.listGames();
     for (const snapshot of games) {
       if (!snapshot.playerIds.includes(playerId)) continue;
-      const state = Game.fromSnapshot(snapshot).getCurrentState();
-      if (state.status === 'in_progress') {
+      const summary = Game.fromSnapshot(snapshot).getSummary();
+      if (summary.status === 'in_progress') {
         await this.deleteGame(snapshot.id);
       }
     }

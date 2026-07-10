@@ -34,6 +34,9 @@ export class FirestoreGameRepository implements GameRepository {
   private toSnapshot(id: string, data: Record<string, unknown>): GameSnapshot {
     return {
       id,
+      // Games created before multi-game-type support didn't store a
+      // gameTypeId at all — they were all YIN, so default accordingly.
+      gameTypeId: (data.gameTypeId as string | undefined) ?? 'yin',
       playerIds: data.playerIds as GameSnapshot['playerIds'],
       playerNames: (data.playerNames as GameSnapshot['playerNames']) ?? {},
       actions: data.actions as GameSnapshot['actions'],
