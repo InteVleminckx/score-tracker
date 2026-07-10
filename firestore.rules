@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// NOTE: this app has no authentication (by design). These rules are
+// intentionally open so anyone with the app URL can read/write. The Firebase
+// config is bundled into the public JS anyway for a static, no-auth site, so
+// this is a known tradeoff, not an oversight. Fine for a private-use score
+// tracker; don't reuse this rule set for anything with real stakes.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /games/{gameId} {
+      allow read, write: if true;
+    }
+  }
+}
