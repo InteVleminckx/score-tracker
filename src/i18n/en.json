@@ -35,7 +35,7 @@
   "history.inProgress": "In progress",
   "history.completed": "Completed",
   "history.resume": "Resume",
-  "history.loser": "Lost: {{name}}",
+  "history.loser": "Loser: {{name}}",
   "history.empty": "No games yet.",
   "history.remove": "Remove game",
   "history.removeConfirm": "Remove this game? This can't be undone.",
