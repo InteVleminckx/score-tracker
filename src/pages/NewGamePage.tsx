@@ -34,6 +34,11 @@ export function NewGamePage() {
     setSelectedIds((prev) => [...prev, user.id]);
   };
 
+  const minPlayers = def.requiredPlayers ?? 2;
+  const validCount = def.requiredPlayers
+    ? selectedIds.length === def.requiredPlayers
+    : selectedIds.length >= minPlayers;
+
   const start = async () => {
     setBusy(true);
     try {
@@ -71,16 +76,18 @@ export function NewGamePage() {
         </button>
       </form>
 
-      {selectedIds.length < 2 && (
+      {!validCount && (
         <p className="text-center text-sm text-amber-600 dark:text-amber-400">
-          {t('newGame.needTwoPlayers')}
+          {def.requiredPlayers
+            ? t('newGame.needExactPlayers', { count: def.requiredPlayers })
+            : t('newGame.needTwoPlayers')}
         </p>
       )}
 
       <button
         type="button"
         onClick={() => void start()}
-        disabled={selectedIds.length < 2 || busy || loading}
+        disabled={!validCount || busy || loading}
         className="w-full rounded-xl bg-indigo-600 px-4 py-4 text-lg font-semibold text-white disabled:opacity-40"
       >
         {t('newGame.start')}

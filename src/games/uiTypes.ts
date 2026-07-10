@@ -13,4 +13,6 @@ export interface GameTypeDefinition {
   descriptionKey?: string;
   engine: GameEngine;
   RoundEntry: ComponentType<RoundEntryProps>;
+  /** If set, the player picker requires exactly this many players (e.g. Wiezen needs 4). */
+  requiredPlayers?: number;
 }
