@@ -3,6 +3,8 @@ import { yinEngine } from './yin';
 import { RoundEntry as YinRoundEntry } from './yin/RoundEntry';
 import { exampleEngine } from './example';
 import { RoundEntry as ExampleRoundEntry } from './example/RoundEntry';
+import { wiezenEngine } from './wiezen';
+import { RoundEntry as WiezenRoundEntry } from './wiezen/RoundEntry';
 
 const yinGameType: GameTypeDefinition = {
   id: yinEngine.gameTypeId,
@@ -10,6 +12,15 @@ const yinGameType: GameTypeDefinition = {
   descriptionKey: 'gameTypes.yin.description',
   engine: yinEngine,
   RoundEntry: YinRoundEntry,
+};
+
+const wiezenGameType: GameTypeDefinition = {
+  id: wiezenEngine.gameTypeId,
+  nameKey: 'gameTypes.wiezen.name',
+  descriptionKey: 'gameTypes.wiezen.description',
+  engine: wiezenEngine,
+  RoundEntry: WiezenRoundEntry,
+  requiredPlayers: 4,
 };
 
 const exampleGameType: GameTypeDefinition = {
@@ -28,6 +39,7 @@ const exampleGameType: GameTypeDefinition = {
  */
 export const gameTypeDefinitions: GameTypeDefinition[] = [
   yinGameType,
+  wiezenGameType,
   ...(import.meta.env.DEV ? [exampleGameType] : []),
 ];
 

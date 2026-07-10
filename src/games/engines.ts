@@ -1,6 +1,7 @@
 import type { GameEngine } from './types';
 import { yinEngine } from './yin';
 import { exampleEngine } from './example';
+import { wiezenEngine } from './wiezen';
 
 /**
  * Pure logic registry — imported by the domain layer (`Game.ts`), so it must
@@ -12,6 +13,7 @@ import { exampleEngine } from './example';
 export const gameEngines: Record<string, GameEngine> = {
   [yinEngine.gameTypeId]: yinEngine,
   [exampleEngine.gameTypeId]: exampleEngine,
+  [wiezenEngine.gameTypeId]: wiezenEngine,
 };
 
 export function getEngine(gameTypeId: string): GameEngine {
