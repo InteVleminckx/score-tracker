@@ -8,7 +8,7 @@
   "gameTypes.example.description": "Een minimaal sjabloon om een nieuw spelsoort te bouwen (enkel in dev).",
   "users.title": "Spelers",
   "users.addPlaceholder": "Naam speler",
-  "users.add": "Speler toevoegen",
+  "users.add": "Voeg toe",
   "users.empty": "Nog geen spelers. Voeg er een toe om te beginnen.",
   "users.remove": "Speler verwijderen",
   "users.removeConfirm": "Deze speler verwijderen? Lopende spellen met deze speler worden verwijderd; afgeronde spellen blijven bewaard.",

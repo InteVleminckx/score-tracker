@@ -8,7 +8,7 @@
   "gameTypes.example.description": "A minimal template for building a new game type (dev only).",
   "users.title": "Players",
   "users.addPlaceholder": "Player name",
-  "users.add": "Add player",
+  "users.add": "Add",
   "users.empty": "No players yet. Add one to get started.",
   "users.remove": "Remove player",
   "users.removeConfirm": "Remove this player? Their in-progress games will be deleted; completed games are kept.",
