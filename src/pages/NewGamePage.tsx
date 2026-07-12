@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useUsers } from '../contexts/UsersContext';
 import { useGame } from '../contexts/GameContext';
 import { useI18n } from '../i18n/I18nContext';
 import { PlayerPicker } from '../components/PlayerPicker';
 import { getGameTypeDefinition } from '../games/registry';
+import { BackIcon } from '../components/icons';
 
 export function NewGamePage() {
   const { t } = useI18n();
@@ -52,6 +53,14 @@ export function NewGamePage() {
 
   return (
     <div className="space-y-6">
+      <Link
+        to="/"
+        aria-label={t('common.back')}
+        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 dark:text-slate-400"
+      >
+        <BackIcon className="h-5 w-5" />
+        {t('common.back')}
+      </Link>
       <h1 className="text-xl font-semibold">{t(def.nameKey)}</h1>
 
       <div className="space-y-2">

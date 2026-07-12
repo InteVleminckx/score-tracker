@@ -25,6 +25,14 @@ export function HomeIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function BackIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M15 5 8 12l7 7" />
+    </Icon>
+  );
+}
+
 export function PlusIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Icon {...props}>
