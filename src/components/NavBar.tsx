@@ -18,7 +18,7 @@ export function NavBar() {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-1 py-3 text-sm font-medium ${
+              `flex flex-1 flex-col items-center gap-0.5 py-1.5 text-sm font-medium ${
                 isActive
                   ? 'text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 dark:text-slate-400'
