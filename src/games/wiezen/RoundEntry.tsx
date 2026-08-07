@@ -117,6 +117,53 @@ export function RoundEntry({ players }: RoundEntryProps) {
     );
   }
 
+  if (contract === 'abondance' || contract === 'miserie' || contract === 'miserieOpen') {
+    const submit = async (succeeded: boolean) => {
+      // Only the success/failure boundary matters for these contracts —
+      // pointsPerOpponent doesn't scale with tricksTaken for them, so any
+      // value on the correct side of the isSuccess threshold is fine.
+      const tricksTaken =
+        contract === 'abondance' ? (succeeded ? bid ?? 9 : 0) : succeeded ? 0 : 1;
+      setBusy(true);
+      await dispatch(
+        new RecordRoundAction(
+          state.rounds.length + 1,
+          contract,
+          playingIds,
+          tricksTaken,
+          bid ?? undefined,
+        ),
+      );
+      setBusy(false);
+      reset();
+    };
+
+    return (
+      <div className="space-y-3">
+        <p className="text-center text-lg font-medium">{t('wiezen.didSucceed')}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => submit(true)}
+            className="rounded-xl border border-emerald-300 bg-white px-4 py-4 text-base font-semibold text-emerald-700 transition active:scale-95 disabled:opacity-40 dark:border-emerald-800 dark:bg-slate-800 dark:text-emerald-400"
+          >
+            {t('wiezen.succeeded')}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => submit(false)}
+            className="rounded-xl border border-rose-300 bg-white px-4 py-4 text-base font-semibold text-rose-700 transition active:scale-95 disabled:opacity-40 dark:border-rose-800 dark:bg-slate-800 dark:text-rose-400"
+          >
+            {t('wiezen.failed')}
+          </button>
+        </div>
+        <CancelButton onCancel={reset} disabled={busy} />
+      </div>
+    );
+  }
+
   const label =
     meta?.playerCount === 1
       ? t('wiezen.tricksTakenSolo', { name: nameOf(players, playingIds[0]) })
@@ -215,6 +262,10 @@ function RoundLog({
                 </span>
                 {r.contract === 'hartenheer' ? (
                   <span className="text-rose-600 dark:text-rose-400">-3</span>
+                ) : r.contract === 'abondance' || r.contract === 'miserie' || r.contract === 'miserieOpen' ? (
+                  <span className={r.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                    {t(r.success ? 'wiezen.success' : 'wiezen.failure')}
+                  </span>
                 ) : (
                   <span className={r.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
                     {r.tricksTaken} {t(r.success ? 'wiezen.success' : 'wiezen.failure')}
