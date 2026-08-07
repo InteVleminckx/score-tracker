@@ -54,25 +54,20 @@ export function RoundEntry({ players }: RoundEntryProps) {
 
   if (!contract) {
     return (
-      <div className="space-y-4">
-        <div className="space-y-3">
-          <p className="text-center text-lg font-medium">{t('wiezen.chooseContract')}</p>
-          <div className="grid grid-cols-2 gap-3">
-            {WIEZEN_CONTRACTS.map((c, i) => {
-              const isLastAlone = i === WIEZEN_CONTRACTS.length - 1 && WIEZEN_CONTRACTS.length % 2 === 1;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setContract(c)}
-                  className={`rounded-xl border border-slate-300 bg-white px-4 py-4 text-base font-medium text-slate-900 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 ${
-                    isLastAlone ? 'col-span-2' : ''
-                  }`}
-                >
-                  {t(`wiezen.contract.${c}`)}
-                </button>
-              );
-            })}
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <p className="text-center text-base font-medium">{t('wiezen.chooseContract')}</p>
+          <div className="grid grid-cols-3 gap-2">
+            {WIEZEN_CONTRACTS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setContract(c)}
+                className="rounded-xl border border-slate-300 bg-white px-2 py-3 text-sm font-medium leading-tight text-slate-900 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              >
+                {t(`wiezen.contract.${c}`)}
+              </button>
+            ))}
           </div>
         </div>
         {state.rounds.length > 0 && <EndGameButton roundNumber={state.rounds.length} />}

@@ -11,10 +11,10 @@ interface LeaderboardProps {
 export function Leaderboard({ players, summary }: LeaderboardProps) {
   const { t } = useI18n();
   return (
-    <section className="space-y-2">
-      <h2 className="text-lg font-semibold">{t('leaderboard.title')}</h2>
+    <section className="space-y-1.5">
+      <h2 className="text-base font-semibold">{t('leaderboard.title')}</h2>
       {summary.status === 'completed' && (
-        <p className="rounded-lg bg-amber-100 px-3 py-2 text-center font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+        <p className="rounded-lg bg-amber-100 px-3 py-1.5 text-center font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
           {t('leaderboard.gameOver')}
         </p>
       )}
@@ -25,11 +25,11 @@ export function Leaderboard({ players, summary }: LeaderboardProps) {
           return (
             <li
               key={p.id}
-              className={`flex items-center justify-between px-4 py-3 ${
+              className={`flex items-center justify-between px-4 py-2 ${
                 isLoser ? 'bg-rose-50 dark:bg-rose-950/40' : 'bg-white dark:bg-slate-900'
               }`}
             >
-              <span className="text-base font-medium">
+              <span className="text-sm font-medium">
                 {p.name}
                 {row?.badgeKey && (
                   <span className="ml-2 text-xs font-normal text-rose-600 dark:text-rose-400">
@@ -37,9 +37,9 @@ export function Leaderboard({ players, summary }: LeaderboardProps) {
                   </span>
                 )}
               </span>
-              <span className="text-xl font-semibold tabular-nums">
+              <span className="text-lg font-semibold tabular-nums">
                 {row?.score ?? 0}{' '}
-                <span className="text-sm font-normal text-slate-500">{t('leaderboard.points')}</span>
+                <span className="text-xs font-normal text-slate-500">{t('leaderboard.points')}</span>
               </span>
             </li>
           );
