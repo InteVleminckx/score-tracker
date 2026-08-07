@@ -7,6 +7,7 @@ import type { RoundEntryProps } from '../uiTypes';
 import type { WiezenGameState } from './state';
 import { RecordRoundAction, EndGameAction } from './actions';
 import { ABONDANCE_BIDS, CONTRACT_META, WIEZEN_CONTRACTS, type WiezenContract } from './contracts';
+import { ChevronDownIcon } from '../../components/icons';
 
 function nameOf(players: RoundEntryProps['players'], id: string): string {
   return players.find((p) => p.id === id)?.name ?? id;
@@ -32,22 +33,46 @@ export function RoundEntry({ players }: RoundEntryProps) {
 
   const meta = contract ? CONTRACT_META[contract] : null;
 
+  if (contract === 'hartenheer') {
+    return (
+      <div className="space-y-3">
+        <PlayerPicker
+          title={t('wiezen.whoHasHeartsKing')}
+          players={players}
+          disabled={busy}
+          onSelect={async (id) => {
+            setBusy(true);
+            await dispatch(new RecordRoundAction(state.rounds.length + 1, 'hartenheer', [id], 0));
+            setBusy(false);
+            reset();
+          }}
+        />
+        <CancelButton onCancel={reset} disabled={busy} />
+      </div>
+    );
+  }
+
   if (!contract) {
     return (
       <div className="space-y-4">
         <div className="space-y-3">
           <p className="text-center text-lg font-medium">{t('wiezen.chooseContract')}</p>
           <div className="grid grid-cols-2 gap-3">
-            {WIEZEN_CONTRACTS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setContract(c)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-4 text-base font-medium text-slate-900 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-              >
-                {t(`wiezen.contract.${c}`)}
-              </button>
-            ))}
+            {WIEZEN_CONTRACTS.map((c, i) => {
+              const isLastAlone = i === WIEZEN_CONTRACTS.length - 1 && WIEZEN_CONTRACTS.length % 2 === 1;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setContract(c)}
+                  className={`rounded-xl border border-slate-300 bg-white px-4 py-4 text-base font-medium text-slate-900 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 ${
+                    isLastAlone ? 'col-span-2' : ''
+                  }`}
+                >
+                  {t(`wiezen.contract.${c}`)}
+                </button>
+              );
+            })}
           </div>
         </div>
         {state.rounds.length > 0 && <EndGameButton roundNumber={state.rounds.length} />}
@@ -169,29 +194,62 @@ function RoundLog({
   rounds: WiezenGameState['rounds'];
 }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   if (rounds.length === 0) return null;
-  const recent = [...rounds].reverse().slice(0, 5);
+  const ordered = [...rounds].reverse();
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-        {t('wiezen.recentRounds')}
-      </p>
-      <ul className="space-y-1 text-sm">
-        {recent.map((r) => (
-          <li
-            key={r.roundNumber}
-            className="flex items-center justify-between rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800"
-          >
-            <span>
-              {t(`wiezen.contract.${r.contract}`)} — {r.playingPlayerIds.map((id) => nameOf(players, id)).join(' & ')}
-            </span>
-            <span className={r.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
-              {r.tricksTaken} {t(r.success ? 'wiezen.success' : 'wiezen.failure')}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between text-sm font-medium text-slate-500 dark:text-slate-400"
+      >
+        <span>
+          {t('wiezen.recentRounds')} ({rounds.length})
+        </span>
+        <ChevronDownIcon className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul className="space-y-1 text-sm">
+          {ordered.map((r) => (
+            <li key={r.roundNumber} className="space-y-1.5 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
+              <div className="flex items-center justify-between">
+                <span>
+                  {t(`wiezen.contract.${r.contract}`)} — {r.playingPlayerIds.map((id) => nameOf(players, id)).join(' & ')}
+                </span>
+                {r.contract === 'hartenheer' ? (
+                  <span className="text-rose-600 dark:text-rose-400">-3</span>
+                ) : (
+                  <span className={r.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                    {r.tricksTaken} {t(r.success ? 'wiezen.success' : 'wiezen.failure')}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {players.map((p) => {
+                  const delta = r.deltas[p.id] ?? 0;
+                  return (
+                    <span
+                      key={p.id}
+                      className={
+                        delta > 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : delta < 0
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : undefined
+                      }
+                    >
+                      {p.name} {delta > 0 ? '+' : ''}
+                      {delta}
+                    </span>
+                  );
+                })}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

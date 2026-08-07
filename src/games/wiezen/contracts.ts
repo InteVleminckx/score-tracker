@@ -1,22 +1,24 @@
 export type WiezenContract =
   | 'vragen'
   | 'troel'
-  | 'troela'
+  | 'alleenGaan'
   | 'abondance'
   | 'miserie'
   | 'miserieOpen'
   | 'solo'
-  | 'soloSlim';
+  | 'soloSlim'
+  | 'hartenheer';
 
 export const WIEZEN_CONTRACTS: WiezenContract[] = [
+  'alleenGaan',
   'vragen',
-  'troel',
-  'troela',
   'abondance',
   'miserie',
+  'troel',
   'miserieOpen',
   'solo',
   'soloSlim',
+  'hartenheer',
 ];
 
 interface ContractMeta {
@@ -31,18 +33,22 @@ interface ContractMeta {
 export const CONTRACT_META: Record<WiezenContract, ContractMeta> = {
   vragen: { playerCount: 2, tricksRequired: 8, needsBid: false },
   troel: { playerCount: 2, tricksRequired: 8, needsBid: false },
-  troela: { playerCount: 2, tricksRequired: 9, needsBid: false },
+  alleenGaan: { playerCount: 1, tricksRequired: 5, needsBid: false },
   abondance: { playerCount: 1, tricksRequired: 9, needsBid: true },
   miserie: { playerCount: 1, tricksRequired: 0, needsBid: false },
   miserieOpen: { playerCount: 1, tricksRequired: 0, needsBid: false },
   solo: { playerCount: 1, tricksRequired: 13, needsBid: false },
   soloSlim: { playerCount: 1, tricksRequired: 13, needsBid: false },
+  // Not a bid contract: scored via a fixed -3/+1 split, handled below.
+  hartenheer: { playerCount: 1, tricksRequired: 0, needsBid: false },
 };
 
 export const ABONDANCE_BIDS = [9, 10, 11, 12, 13];
 const ABONDANCE_POINTS: Record<number, number> = { 9: 4, 10: 7, 11: 8, 12: 9, 13: 10 };
 
 export function isSuccess(contract: WiezenContract, tricksTaken: number, bid?: number): boolean {
+  // Framed as the selected player always "losing" the -3/+1 split — see computeRoundDeltas.
+  if (contract === 'hartenheer') return false;
   if (contract === 'miserie' || contract === 'miserieOpen') return tricksTaken === 0;
   const required = contract === 'abondance' ? (bid ?? 9) : CONTRACT_META[contract].tricksRequired;
   return tricksTaken >= required;
@@ -51,11 +57,14 @@ export function isSuccess(contract: WiezenContract, tricksTaken: number, bid?: n
 /**
  * Per-opponent point value for the round, per the nl.wikipedia.org/wiki/Wiezen
  * scoring table: Vragen 2pts (+1/overtrick, doubled on all 13 tricks), Troel
- * 4pts (+2/overtrick, 20 flat on all 13), Troela same as Troel but off a
- * 9-trick base, Abondance per the 9-13 trick table, Misère 7 (14 open),
- * Solo 25, Solo-slim 30. Failure penalties aren't documented on that page, so
- * on failure we charge the same flat base the contract pays for a bare
- * (non-overtrick) success — adjust here if your table plays harsher misses.
+ * 4pts (+2/overtrick, 20 flat on all 13), Alleen gaan 2pts off a 5-trick base
+ * (+1/overtrick), Abondance per the 9-13 trick table, Misère 7 (14 open),
+ * Solo 25, Solo-slim 30. Hartenheer isn't a bid contract — it's a flat -3/+1
+ * split, modeled here as a constant 1-point "loss" for whoever's picked (see
+ * `isSuccess`). Failure penalties for the bid contracts aren't documented on
+ * that page, so on failure we charge the same flat base the contract pays
+ * for a bare (non-overtrick) success — adjust here if your table plays
+ * harsher misses.
  */
 function pointsPerOpponent(contract: WiezenContract, tricksTaken: number, bid?: number): number {
   switch (contract) {
@@ -65,8 +74,8 @@ function pointsPerOpponent(contract: WiezenContract, tricksTaken: number, bid?: 
     }
     case 'troel':
       return tricksTaken === 13 ? 20 : 4 + Math.max(0, tricksTaken - 8) * 2;
-    case 'troela':
-      return tricksTaken === 13 ? 20 : 4 + Math.max(0, tricksTaken - 9) * 2;
+    case 'alleenGaan':
+      return 2 + Math.max(0, tricksTaken - 5);
     case 'abondance':
       return ABONDANCE_POINTS[bid ?? 9] ?? 4;
     case 'miserie':
@@ -77,6 +86,8 @@ function pointsPerOpponent(contract: WiezenContract, tricksTaken: number, bid?: 
       return 25;
     case 'soloSlim':
       return 30;
+    case 'hartenheer':
+      return 1;
   }
 }
 
